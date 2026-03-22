@@ -1,0 +1,28 @@
+{
+  "name": "mocha-jira-reporter-example",
+  "version": "1.0.0",
+  "description": "Example project demonstrating @testream/mocha-reporter — stream Mocha test results into Jira with Testream",
+  "keywords": [
+    "mocha",
+    "jira",
+    "reporter",
+    "testream",
+    "test-reporting",
+    "ci-cd"
+  ],
+  "private": true,
+  "scripts": {
+    "test": "mocha"
+  },
+  "devDependencies": {
+    "@testream/mocha-reporter": "latest",
+    "@types/chai": "^4.0.0",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^22.0.0",
+    "chai": "^4.0.0",
+    "dotenv": "^16.0.0",
+    "mocha": "^10.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
+  }
+}

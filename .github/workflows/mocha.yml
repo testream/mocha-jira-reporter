@@ -1,0 +1,33 @@
+name: Mocha Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Mocha tests
+        run: npm test
+        env:
+          # Testream will upload results when TESTREAM_API_KEY is present.
+          # Add it as a repository secret (Settings → Secrets → Actions).
+          TESTREAM_API_KEY: ${{ secrets.TESTREAM_API_KEY }}
+          # Passed to the reporter so results are linked to the right app version.
+          TESTREAM_APP_VERSION: ${{ github.sha }}
+          # Lets you filter results by environment in the Testream dashboard.
+          TEST_ENV: ci
