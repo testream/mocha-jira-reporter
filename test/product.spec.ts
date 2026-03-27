@@ -33,6 +33,10 @@ describe('formatPrice', () => {
   it('formats whole dollars without extra decimals', () => {
     expect(formatPrice(1000)).to.equal('$10.00');
   });
+
+  it('formats a price in EUR', () => {
+    expect(formatPrice(1999, 'EUR', 'en-US')).to.equal('€19.99');
+  });
 });
 
 describe('validateProduct', () => {

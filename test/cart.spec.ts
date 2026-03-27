@@ -101,6 +101,13 @@ describe('Cart — totals', () => {
     cart.addItem(BANANA, 3); // 240
     expect(cart.getTotal()).to.equal(480);
   });
+
+  it('recalculates total correctly after an item is removed', () => {
+    cart.addItem(APPLE, 2); // 240
+    cart.addItem(BANANA, 1); // 80
+    cart.removeItem(BANANA.id);
+    expect(cart.getTotal()).to.equal(240);
+  });
 });
 
 describe('Cart — clear', () => {

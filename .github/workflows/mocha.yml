@@ -26,7 +26,7 @@ jobs:
         env:
           # Testream will upload results when TESTREAM_API_KEY is present.
           # Add it as a repository secret (Settings → Secrets → Actions).
-          TESTREAM_API_KEY: ${{ secrets.TESTREAM_API_KEY }}
+          TESTREAM_API_KEY: ${{ secrets.TEST_TESTREAM_API_KEY }}
           # Passed to the reporter so results are linked to the right app version.
           TESTREAM_APP_VERSION: ${{ github.sha }}
           # Lets you filter results by environment in the Testream dashboard.
