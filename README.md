@@ -1,116 +1,161 @@
-# Mocha Reporter for Jira Teams using Testream
+# Mocha Jira Reporter: Send Mocha Test Results to Jira with Testream
 
-This repository demonstrates how to integrate [Mocha](https://mochajs.org) with [Testream](https://testream.app) so that test results are automatically uploaded to your Jira workspace after every CI run.
+This repository is a practical **Mocha + Jira integration example** using [`@testream/mocha-reporter`](https://docs.testream.app/reporters/mocha). It shows how to upload Mocha results from local runs and GitHub Actions into Jira through Testream.
+
+If you are searching for **"Mocha Jira reporter"**, **"Mocha GitHub Actions Jira integration"**, or **"send Mocha results to Jira"**, this repo is the implementation template.
+
+## Why this example is useful
+
+- **CI-ready**: Includes a complete GitHub Actions workflow.
+- **Fallback-safe**: Uses standard `spec` reporter when no API key is present.
+- **Strict upload behavior**: `failOnUploadError=true` is set in reporter options.
+- **Real failure triage**: Intentional failing tests demonstrate error flow in Jira.
 
 ## What is Testream?
 
-[Testream](https://testream.app) is a test reporting tool for Jira teams. It imports CI/CD test results from native reporters (Vitest, Playwright, Jest, Cypress, Mocha, and others), giving your team failure inspection, trends, and release visibility directly inside Jira — without manual test case management.
+[Testream](https://testream.app) is an automated test management and reporting platform for Jira teams. It ingests results from frameworks like Mocha, Jest, Vitest, and Playwright, then provides failure diagnostics and run trends directly in Jira.
 
-Once configured, every Mocha run streams structured results to Testream. Failed tests appear in Jira with the full error message and stack trace attached, so triage starts with complete context.
+If this sample repository is not the framework you need, browse all native reporters in the Testream docs: <https://docs.testream.app/>.
+
+### Watch Testream in action
+
+Click to see how Testream turns raw CI test results into actionable Jira insights (failures, trends, and release visibility):  
+[![Watch the video](https://img.youtube.com/vi/5sDao2Q8k1k/maxresdefault.jpg)](https://www.youtube.com/watch?v=5sDao2Q8k1k)
+
+Install **[Testream Automated Test Management and Reporting for Jira](https://marketplace.atlassian.com/apps/3048460704/testream-automated-test-management-and-reporting-for-jira)** in your Jira workspace to view uploaded runs.
 
 ## Project structure
 
-```
+```text
 src/
-  cart.ts          — Cart class: add/remove items, calculate totals, checkout
-  product.ts       — Product type, formatPrice, validateProduct, getDiscountedPrice
-  discount.ts      — Coupon type, applyPercentage, applyFixed, validateCoupon
+  cart.ts          - Cart class and checkout behavior
+  product.ts       - Product validation and pricing helpers
+  discount.ts      - Coupon validation and discount helpers
 test/
-  cart.spec.ts     — Cart tests (passing + 1 intentional failure)
-  product.spec.ts  — Product tests (passing + 1 intentional failure)
-  discount.spec.ts — Discount tests (passing + 1 intentional failure)
+  cart.spec.ts     - Cart tests (passing + 1 intentional failure)
+  product.spec.ts  - Product tests (passing + 1 intentional failure)
+  discount.spec.ts - Discount tests (passing + 1 intentional failure)
 .mocharc.js
 .github/workflows/mocha.yml
 .env.example
 ```
 
-The three intentionally failing tests exist so you can see exactly what a failed test looks like inside Testream and Jira — with the error diff and stack trace surfaced in the dashboard.
+The intentional failures help you verify how Mocha failures are represented in Testream/Jira.
 
-## Getting started
+## Quick start: Mocha to Jira reporting
 
-### 1. Install Testream for Jira
+### 1. Create your Testream project and API key
 
-Install the **[Testream for Jira](https://marketplace.atlassian.com/apps/3048460704/testream-for-jira)** app from the Atlassian Marketplace into your Jira workspace. This is what surfaces test results, failure details, trends, and dashboards inside Jira.
+1. Sign in at [testream.app](https://testream.app).
+2. Create a project.
+3. Copy your API key.
 
-### 2. Create a Testream project
-
-1. Sign in at [testream.app](https://testream.app) (free plan available).
-2. Create a project and copy your API key.
-
-### 3. Install dependencies
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 4. Configure your API key
+### 3. Configure environment variables
 
 ```bash
 cp .env.example .env
-# then set TESTREAM_API_KEY=<your key> in .env
 ```
 
-### 5. Run the tests
+Set at least:
+
+```bash
+TESTREAM_API_KEY=<your key>
+```
+
+### 4. Run Mocha tests
 
 ```bash
 npm test
 ```
 
-Results are uploaded to Testream automatically when `TESTREAM_API_KEY` is present. Without a key, tests still run locally using the default `spec` reporter — no upload occurs.
+With `TESTREAM_API_KEY`, results are uploaded automatically. Without a key, tests still run with Mocha `spec` output and upload is skipped.
 
-## Testream reporter configuration
+## Reporter configuration (`.mocharc.js`)
 
-The reporter is configured in `.mocharc.js`. Because Mocha's reporter is set as a single string (not an array), the conditional pattern switches the entire reporter rather than spreading it in:
+This setup conditionally switches Mocha reporter:
 
-```js
-require('dotenv').config();
+- Uses `@testream/mocha-reporter` when API key exists.
+- Uses default `spec` reporter when API key is missing.
+- Sets `failOnUploadError=true`, `appName`, `appVersion`, `testEnvironment`, and `testType`.
+- CI metadata (`branch`, `commitSha`, `repositoryUrl`, `buildNumber`, `buildUrl`) is auto-detected.
 
-const apiKey = process.env.TESTREAM_API_KEY || '';
-const uploadEnabled = apiKey.length > 0;
+Reporter docs: <https://docs.testream.app/reporters/mocha>
 
-module.exports = {
-  require: ['ts-node/register'],
-  spec: 'test/**/*.spec.ts',
-  reporter: uploadEnabled ? '@testream/mocha-reporter' : 'spec',
-  ...(uploadEnabled && {
-    'reporter-option': [
-      `apiKey=${apiKey}`,
-      'uploadEnabled=true',
-      'failOnUploadError=true',
-      `appName=mocha-jira-reporter-example`,
-      `appVersion=${process.env.TESTREAM_APP_VERSION || '1.0.0'}`,
-      `testEnvironment=${process.env.TEST_ENV || 'local'}`,
-      'testType=unit',
-      // branch, commitSha, repositoryUrl, buildNumber, and buildUrl
-      // are auto-detected by the reporter in CI environments.
-    ],
-  }),
-};
-```
+## GitHub Actions setup
 
-See the [Testream Mocha reporter docs](https://docs.testream.app/reporters/mocha) for the full list of configuration options.
+The workflow at `.github/workflows/mocha.yml` runs on pushes and pull requests to `main`.
 
-## CI with GitHub Actions
+Add this repository secret:
 
-The workflow at `.github/workflows/mocha.yml` runs all tests on every push and pull request. The only secret you need to add is your Testream API key:
-
-**Settings → Secrets and variables → Actions → New repository secret**
+**Settings -> Secrets and variables -> Actions -> New repository secret**
 
 | Name | Value |
 |---|---|
-| `TESTREAM_API_KEY` | your Testream API key |
+| `TESTREAM_API_KEY` | Your Testream API key |
 
-All other metadata (branch, commit SHA, build number, build URL, repository URL) is resolved automatically — nothing else to configure.
+Workflow env examples already set:
 
-## Viewing results in Jira
+| Variable | Example |
+|---|---|
+| `TESTREAM_APP_VERSION` | `${{ github.sha }}` |
+| `TEST_ENV` | `ci` |
 
-Once tests are uploaded, open your Testream project and connect it to your Jira workspace. With the **[Testream for Jira](https://marketplace.atlassian.com/apps/3048460704/testream-for-jira)** app installed you get:
+## How results appear in Jira
 
-- **Dashboard** — pass rates, failure counts, flaky test detection, and execution summaries at a glance
-- **Failure Insights** — inspect failed tests with the full error, stack trace, and diff
-- **Trends & Analytics** — pass/fail trends, duration patterns, and suite growth over custom date ranges
-- **Test Suite Changes** — see which tests were added or removed between runs
-- **Release Visibility** — link test runs to Jira releases to track quality before shipping
-- **Jira Issues** — create issues directly from any failed test with failure context pre-filled
+After connecting Testream to Jira, you get:
 
-See the [Testream Mocha reporter docs](https://docs.testream.app/reporters/mocha) for the full list of configuration options.
+- Dashboard-level pass/fail visibility
+- Failure diagnostics with assertion diffs and stack traces
+- Trend analysis across runs
+- Jira issue creation from failed tests
+
+## Troubleshooting
+
+### Upload is skipped unexpectedly
+
+- Confirm `TESTREAM_API_KEY` is present in `.env` or CI secrets.
+- Verify `.mocharc.js` loaded your environment variables.
+
+### Upload fails in CI
+
+- Confirm secrets are available to the workflow.
+- Keep `failOnUploadError=true` if you want CI to fail on upload issues.
+
+### Tests run but no Jira data appears
+
+- Verify your Testream project is connected to the intended Jira workspace.
+
+## FAQ
+
+### Is this only a demo?
+
+It is an example repository with production-style setup intended to be cloned and adapted.
+
+### Why include failing tests?
+
+To demonstrate how failures, diffs, and stack traces appear in Testream/Jira.
+
+### Can I run Mocha without Testream?
+
+Yes. Mocha runs as usual; upload only activates with an API key.
+
+## Mocha Jira reporting alternatives (quick view)
+
+| Approach | Benefit | Tradeoff |
+|---|---|---|
+| Raw console logs/artifacts | Minimal setup | Limited Jira-native reporting |
+| Custom upload tooling | Flexible | More maintenance complexity |
+| Testream Mocha reporter (this repo) | Native integration + Jira workflows | Requires Testream setup |
+
+## Related links
+
+- Testream app: <https://testream.app>
+- Testream Automated Test Management and Reporting for Jira: <https://marketplace.atlassian.com/apps/3048460704/testream-automated-test-management-and-reporting-for-jira>
+- Mocha reporter docs: <https://docs.testream.app/reporters/mocha>
+- Mocha docs: <https://mochajs.org>
